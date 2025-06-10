@@ -1,67 +1,32 @@
-import React from "react"
-import { Cpu} from "phosphor-react"
+import { Card, CardContent } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import type { LaptopRecommendation } from "@/App";
 
-export type LaptopRecommendation = {
-  Brand: string
-  Model: string
-  CPU: string
-  GPU: string
-  Price: number | string
-  Score?: number
-  Category?: string
-}
-
-type Props = {
-  data: LaptopRecommendation
-}
-
-const LaptopCard: React.FC<Props> = ({ data }) => {
-  const { Brand, Model, CPU, GPU, Price, Score, Category } = data
-  const priceValue = typeof Price === "number" ? Price : parseInt(Price)
-
+export default function LaptopCard({ data }: { data: LaptopRecommendation }) {
   return (
-    <div className="bg-zinc-800 rounded-xl p-5 shadow-lg border border-zinc-700 hover:shadow-purple-500/20 transition-all duration-300 space-y-3">
-      {/* Title */}
-      <h2 className="text-lg font-bold text-white leading-snug">
-        {Brand} <span className="text-purple-400">{Model}</span>
-      </h2>
+    <Card className="bg-gray-900 text-white shadow-lg transition hover:scale-[1.01] min-h-[260px]">
+      <CardContent className="p-5 space-y-2">
+        <div className="text-lg font-semibold">{data.Brand} {data.Model}</div>
+        <div className="text-xs px-2 py-1 rounded-full bg-purple-700 w-fit">RECOMMENDED</div>
 
-      {/* Category */}
-      {Category && (
-        <span className="inline-block text-xs bg-purple-900/50 text-purple-300 px-2 py-1 rounded-full uppercase tracking-wide">
-          {Category}
-        </span>
-      )}
-
-      {/* CPU & GPU */}
-      <div className="text-sm text-zinc-300 flex items-center gap-3">
-        <div className="flex items-center gap-1">
-          <Cpu size={16} /> <span>{CPU}</span>
+        <div className="text-sm text-zinc-300">
+          <span className="font-medium">CPU:</span> {data.CPU}
         </div>
-        <div className="flex items-center gap-1">
-          <span>{GPU}</span>
+        <div className="text-sm text-zinc-300">
+          <span className="font-medium">GPU:</span> {data.GPU}
         </div>
-      </div>
-
-      {/* Score Bar */}
-      {typeof Score === "number" && (
-        <div className="text-xs text-zinc-400">
-          Score:
-          <div className="w-full bg-zinc-700 h-2 rounded mt-1 overflow-hidden">
-            <div
-              className="bg-lime-400 h-full"
-              style={{ width: `${Math.min(Score / 300, 1) * 100}%` }}
-            ></div>
+        {data.Category && (
+          <div className="text-sm text-zinc-400 italic">
+            {data.Category}
           </div>
+        )}
+
+        <div className="text-sm text-zinc-300 mt-2">Match Score:</div>
+        <Progress value={data.Match_Score ?? 0} className="mb-1" />
+        <div className="text-xl font-bold text-lime-400">
+          Rp {typeof data.Price === "number" ? data.Price.toLocaleString("id-ID") : data.Price}
         </div>
-      )}
-
-      {/* Price */}
-      <p className="text-lg font-semibold text-lime-400">
-        Rp {priceValue.toLocaleString("id-ID")}
-      </p>
-    </div>
-  )
+      </CardContent>
+    </Card>
+  );
 }
-
-export default LaptopCard

@@ -5,9 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import axios from "axios";
-import LaptopCard from "@/components/LaptopCard";
+import LaptopList from "@/components/LaptopList";
 import { motion, AnimatePresence } from "framer-motion";
 import { SpinnerGap, Sparkle, ArrowCounterClockwise } from "phosphor-react";
+
+const BASE_URL = "http://127.0.0.1:5000";
+// const BASE_URL = "http://127.0.0.1:5000"; // NGROK
+
 
 export type LaptopRecommendation = {
   Brand: string;
@@ -15,8 +19,11 @@ export type LaptopRecommendation = {
   CPU: string;
   GPU: string;
   Price: number | string;
-  Score?: number;
+  Match_Score?: number;
   Category?: string;
+  RAM?: string;
+  Storage?: string;
+  Battery?: string;
 };
 
 type AppDataItem = typeof appData[0];
@@ -69,43 +76,31 @@ const App: React.FC = () => {
   //   }
   // };
 
-const handleSubmit = () => {
-  if (!teks.trim()) return toast.error("Input kosong");
+  const handleSubmit = async () => {
+    if (!teks.trim()) return toast.error("Input kosong");
 
-  const query = teks.toLowerCase();
-  const matched = (appData as AppDataItem[]).filter((item) => {
-    const app = item.App.toLowerCase();
-    const desc = item.Description?.toLowerCase() || "";
-    const categories = item.Category?.join(", ").toLowerCase() || "";
-    return (
-      query.includes(app) ||
-      app.includes(query) ||
-      desc.includes(query) ||
-      categories.includes(query)
-    );
-  });
+    try {
+      const res = await axios.get<LaptopRecommendation[]>(
+        `${BASE_URL}/recommend?query=${encodeURIComponent(teks)}`
+      );
 
-  if (!matched.length) {
-    toast.error("Tidak ada rekomendasi ditemukan.");
-    return;
-  }
+      const hasil = res.data.map((item: any): LaptopRecommendation => ({
+        Brand: item.Brand,
+        Model: item.Model,
+        CPU: item.CPU,
+        GPU: item.GPU,
+        Price: item["Final Price"], // fix nama key
+        Match_Score: Math.round(item.Match_Score * 100),
+        Category: item.Category,
+      }));
 
-  const hasil: LaptopRecommendation[] = matched.map((item) => ({
-    Brand: item.App,
-    Model: item.Description.slice(0, 30) + "...",
-    CPU: item.CPU_Intel || item.CPU_AMD || "-",
-    GPU: item.GPU_NVIDIA || item.GPU_AMD || item.GPU_Intel || "-",
-    Price: "Rp10.000.000", // Dummy price sementara
-    Category: item.Category.join(", "),
-    Score: Math.floor(
-      ((item.CPU_Intel_score ?? item.CPU_AMD_score ?? 0) +
-        (item.GPU_NVIDIA_score ?? item.GPU_AMD_score ?? item.GPU_Intel_score ?? 0)) / 2
-    ),
-  }));
-
-  setRekomendasi(hasil);
-  setStage("result");
-};
+      setRekomendasi(hasil);
+      setStage("result");
+    } catch (err) {
+      console.error("Error fetching rekomendasi:", err);
+      toast.error("Gagal mengambil data dari server.");
+    }
+  };
 
   const resetAll = () => {
     setTeks("");
@@ -231,19 +226,9 @@ const handleSubmit = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4 }}
-            className="p-6 space-y-6 w-full max-w-6xl mx-auto"
+            className="w-full min-h-screen px-6 py-10 bg-gradient-to-br from-purple-900 to-black text-white"
           >
-            <div className="flex justify-between items-center mb-4">
-              <h1 className="text-3xl font-bold text-purple-400">Rekomendasi Laptop untukmu</h1>
-              <Button variant="outline" onClick={resetAll} className="gap-2">
-                <ArrowCounterClockwise size={20} /> Ulangi
-              </Button>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {rekomendasi.map((item, idx) => (
-                <LaptopCard key={idx} data={item} />
-              ))}
-            </div>
+            <LaptopList data={rekomendasi} onBack={resetAll} />
           </motion.div>
         )}
       </AnimatePresence>
