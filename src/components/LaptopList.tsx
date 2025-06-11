@@ -13,7 +13,7 @@ export default function LaptopList({ data, onBack }: { data: LaptopRecommendatio
         <div className="w-full space-y-6">
             <div className="flex justify-between items-center mb-4 max-w-screen-xl mx-auto px-4">
                 <h1 className="text-3xl font-bold text-purple-400">Rekomendasi Laptop untukmu</h1>
-                <Button variant="outline" onClick={onBack} className="gap-2">🔄 Ulangi</Button>
+                <Button variant="outline" onClick={onBack} className="gap-2 hover:text-blue-200">Cari Kebutuhan Lain</Button>
             </div>
 
             <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 w-full max-w-screen-2xl mx-auto px-4">

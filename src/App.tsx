@@ -125,7 +125,7 @@ const App: React.FC = () => {
   const resetAll = () => {
     setTeks("");
     setRekomendasi([]);
-    setStage("init");
+    setStage("form");
   };
 
   return (
