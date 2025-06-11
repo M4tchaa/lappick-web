@@ -94,6 +94,8 @@ const App: React.FC = () => {
             Model: item.Model,
             CPU: item.CPU,
             GPU: item.GPU,
+            RAM: item.RAM,
+            Storage: item.Storage,
             Price: item["Final Price"],
             Match_Score: Math.round(item.Match_Score * 100),
             Category: item.Category,

@@ -23,9 +23,9 @@ export default function LaptopList({ data, onBack }: { data: LaptopRecommendatio
             </div>
 
             <div className="flex justify-center items-center gap-4 mt-6 max-w-screen-xl mx-auto px-4">
-                <Button variant="outline" onClick={() => setPage((p) => p - 1)} disabled={page === 1}>Sebelumnya</Button>
+                <Button variant="outline" className="hover:text-blue-200" onClick={() => setPage((p) => p - 1)} disabled={page === 1}>Sebelumnya</Button>
                 <div className="text-sm text-white">Halaman {page} dari {totalPages}</div>
-                <Button variant="outline" onClick={() => setPage((p) => p + 1)} disabled={page === totalPages}>Selanjutnya</Button>
+                <Button variant="outline" className="hover:text-blue-200" onClick={() => setPage((p) => p + 1)} disabled={page === totalPages}>Selanjutnya</Button>
             </div>
         </div>
 
