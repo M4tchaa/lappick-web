@@ -3,7 +3,7 @@ import "./App.css";
 import appData from "./lib/api.json";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+import { toast, Toaster } from "sonner";
 import axios from "axios";
 import LaptopList from "@/components/LaptopList";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,7 +11,6 @@ import { SpinnerGap, Sparkle, ArrowCounterClockwise } from "phosphor-react";
 
 const BASE_URL = "http://127.0.0.1:5000";
 // const BASE_URL = "http://127.0.0.1:5000"; // NGROK
-
 
 export type LaptopRecommendation = {
   Brand: string;
@@ -26,15 +25,19 @@ export type LaptopRecommendation = {
   Battery?: string;
 };
 
-type AppDataItem = typeof appData[0];
+type AppDataItem = (typeof appData)[0];
 
 const App: React.FC = () => {
-  const [stage, setStage] = useState<"init" | "welcome" | "loading" | "form" | "result">("init");
+  const [stage, setStage] = useState<
+    "init" | "welcome" | "loading" | "form" | "result"
+  >("init");
   const [teks, setTeks] = useState("");
   const [rekomendasi, setRekomendasi] = useState<LaptopRecommendation[]>([]);
   const [typewriterText, setTypewriterText] = useState("");
   const fullTextRef = useRef("Selamat Datang di LapPick ~");
   const idxRef = useRef(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (stage === "welcome") {
@@ -63,44 +66,61 @@ const App: React.FC = () => {
 
   const handleStart = () => setStage("welcome");
 
-  // const handleSubmit = async () => {
-  //   if (!teks.trim()) return toast.error("Input kosong");
-  //   try {
-  //     const res = await axios.get<{ rekomendasi: LaptopRecommendation[] }>(
-  //       `http://localhost:5000/rekomendasi?teks=${encodeURIComponent(teks)}`
-  //     );
-  //     setRekomendasi(res.data.rekomendasi ?? []);
-  //     setStage("result");
-  //   } catch {
-  //     toast.error("Gagal mengambil data.");
-  //   }
-  // };
-
   const handleSubmit = async () => {
-    if (!teks.trim()) return toast.error("Input kosong");
+    if (!teks.trim()) {
+      toast.error("Input kosong");
+      return;
+    }
+
+    setLoading(true);
 
     try {
-      const res = await axios.get<LaptopRecommendation[]>(
+      const res = await axios.get(
         `${BASE_URL}/recommend?query=${encodeURIComponent(teks)}`
       );
 
-      const hasil = res.data.map((item: any): LaptopRecommendation => ({
-        Brand: item.Brand,
-        Model: item.Model,
-        CPU: item.CPU,
-        GPU: item.GPU,
-        Price: item["Final Price"], // fix nama key
-        Match_Score: Math.round(item.Match_Score * 100),
-        Category: item.Category,
-      }));
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        const firstItem = res.data[0];
 
-      setRekomendasi(hasil);
-      setStage("result");
-    } catch (err) {
+        if (firstItem.Status === "Tidak Ditemukan") {
+          throw new Error(
+            firstItem.Pesan ?? "Tidak ditemukan hasil yang cocok."
+          );
+        }
+
+        const hasil = res.data.map(
+          (item: any): LaptopRecommendation => ({
+            Brand: item.Brand,
+            Model: item.Model,
+            CPU: item.CPU,
+            GPU: item.GPU,
+            Price: item["Final Price"],
+            Match_Score: Math.round(item.Match_Score * 100),
+            Category: item.Category,
+          })
+        );
+
+        setRekomendasi(hasil);
+        setStage("result");
+      } else {
+        throw new Error("Response server kosong atau invalid.");
+      }
+    } catch (err: any) {
       console.error("Error fetching rekomendasi:", err);
-      toast.error("Gagal mengambil data dari server.");
+      const message =
+        err.message || "Terjadi kesalahan saat memproses permintaan.";
+      toast.error(message);
+    } finally {
+      setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+      // setStage("form");
+    }
+  }, [error]);
 
   const resetAll = () => {
     setTeks("");
@@ -110,7 +130,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1e1e3f] via-[#302b63] to-[#5c258d] text-white relative flex items-center justify-center overflow-hidden">
-
+      <Toaster />
       {/* INIT */}
       <AnimatePresence>
         {stage === "init" && (
@@ -139,7 +159,9 @@ const App: React.FC = () => {
               <h1 className="text-3xl sm:text-4xl font-bold leading-tight mb-2">
                 Siap mulai cari laptop terbaik?
               </h1>
-              <p className="text-sm text-zinc-400 mb-6">Klik tombol di bawah ini untuk memulai</p>
+              <p className="text-sm text-zinc-400 mb-6">
+                Klik tombol di bawah ini untuk memulai
+              </p>
               <Button
                 onClick={handleStart}
                 className="w-full bg-purple-600 hover:bg-purple-700 transition-all duration-300 shadow-md hover:shadow-purple-500/40"
@@ -171,7 +193,10 @@ const App: React.FC = () => {
             >
               {stage === "welcome" && (
                 <>
-                  <Sparkle className="mx-auto text-purple-400 w-10 h-10 animate-pulse" weight="duotone" />
+                  <Sparkle
+                    className="mx-auto text-purple-400 w-10 h-10 animate-pulse"
+                    weight="duotone"
+                  />
                   <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight min-h-[3rem] leading-snug">
                     {typewriterText}
                     <span className="animate-blink">|</span>
@@ -192,13 +217,17 @@ const App: React.FC = () => {
               {stage === "loading" && (
                 <div className="flex flex-col items-center gap-3">
                   <SpinnerGap className="w-8 h-8 animate-spin text-purple-400" />
-                  <p className="text-sm text-zinc-400">Menyiapkan input form...</p>
+                  <p className="text-sm text-zinc-400">
+                    Menyiapkan input form...
+                  </p>
                 </div>
               )}
 
               {stage === "form" && (
                 <>
-                  <h2 className="text-xl font-bold text-center mb-4">Apa kebutuhan laptopmu?</h2>
+                  <h2 className="text-xl font-bold text-center mb-4">
+                    Apa kebutuhan laptopmu?
+                  </h2>
                   <Input
                     placeholder="Contoh: laptop untuk desain grafis 10 juta"
                     value={teks}
